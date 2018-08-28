@@ -1,0 +1,240 @@
+---
+title: Project2
+output: html_notebook
+student name: Lam Phan
+Class: Machine Learning
+Professor: Karen Mazidi
+---
+
+The first data set I took from kaggle
+Project: Home Credit Default Risk
+Here is the website to get the dataset: https://www.kaggle.com/c/home-credit-default-risk/data
+
+
+
+The first data set I take from kaggle
+Project: 
+here is the link to get the data set:
+For this data I would like the machine to learn about the loan type that people are getting base on there income, credit balance, etc. 
+```{r}
+df1_test <- read.csv(file = "/Users/lamphan/Desktop/MachineLearning Project2/application_test.csv", header=TRUE, sep=",")
+df1_train <- read.csv(file = "/Users/lamphan/Desktop/MachineLearning Project2/application_train.csv", header=TRUE, sep=",")
+```
+
+```{r}
+#check out the features and their data types for the test set
+summary(df1_test)
+names(df1_test)
+str(df1_test)
+head(df1_test)
+tail(df1_test)
+dim(df1_test)
+```
+```{r}
+#check out the features and their data types for the train set
+summary(df1_train)
+names(df1_train)
+str(df1_train)
+head(df1_train)
+tail(df1_train)
+dim(df1_train)
+```
+```{r}
+#data cleaning for test set and train set
+test1 <- df1_test[,c("NAME_CONTRACT_TYPE","CODE_GENDER", "FLAG_OWN_CAR", "FLAG_OWN_REALTY", "AMT_INCOME_TOTAL", "AMT_CREDIT","AMT_ANNUITY", "AMT_GOODS_PRICE", "NAME_INCOME_TYPE", "NAME_EDUCATION_TYPE","DAYS_EMPLOYED")]
+train1 <- df1_train[,c("NAME_CONTRACT_TYPE","CODE_GENDER", "FLAG_OWN_CAR", "FLAG_OWN_REALTY", "AMT_INCOME_TOTAL", "AMT_CREDIT","AMT_ANNUITY", "AMT_GOODS_PRICE", "NAME_INCOME_TYPE", "NAME_EDUCATION_TYPE","DAYS_EMPLOYED")]
+```
+
+```{r}
+#check the dataset for train data set again after cleaning
+summary(train1)
+names(train1)
+str(train1)
+head(train1)
+tail(train1)
+dim(train1)
+```
+```{r}
+#check the dataset for test data set again after cleaning
+summary(test1)
+names(test1)
+str(test1)
+head(test1)
+tail(test1)
+dim(test1)
+```
+For next I would like to use Logistic Regression for this dataset.
+
+```{r}
+glm_loan <- glm(NAME_CONTRACT_TYPE~CODE_GENDER +FLAG_OWN_CAR +FLAG_OWN_REALTY + AMT_INCOME_TOTAL + AMT_CREDIT + AMT_ANNUITY + AMT_GOODS_PRICE , data=train1, family=binomial)
+summary(glm_loan)
+```
+```{r}
+is.na(glm_loan)
+```
+```{r}
+probs <- predict(glm_loan, newdata=test1, type="response")
+probs[is.na(probs)] <- probs[1]
+pred_glm_loan <- ifelse(probs>0.5, 2, 1)
+```
+some NA values appears giving me a hard time getting the accuracy value
+so I decided to replace them NA values.
+```{r}
+glm_loan_acc <- mean(pred_glm_loan==as.integer(test1$NAME_CONTRACT_TYPE))
+print(paste("glm loan accuracy = ", glm_loan_acc))
+```
+accuracy is 96.75% which is not bad.
+```{r}
+set.seed(2018)
+library(tree)
+tree_loan1 <- tree(NAME_CONTRACT_TYPE~., data=train1)
+plot(tree_loan1)
+text(tree_loan1, cex=0.5, pretty=0.5)
+```
+```{r}
+tree_loan1
+```
+```{r}
+summary(tree_loan1)
+tree_pred_loan1 <- predict(tree_loan1, newdata=test1, type="class")
+table(tree_pred_loan1, test1$NAME_CONTRACT_TYPE)
+acc_tree_loan1 <- mean(tree_pred_loan1==test1$NAME_CONTRACT_TYPE)
+print(paste("Tree algorithm for loan data set accuracy = ", acc_tree_loan1))
+```
+The matrix shows us that it caught 149 errors out of 48078 data.
+The accuracy for the tree algorithm is 99.228% which is pretty good pretty accurate. 
+
+
+
+Applying Naive Bayes
+```{r}
+library(e1071)
+set.seed(2018)
+nb_model_loan <- naiveBayes(NAME_CONTRACT_TYPE~., data = train1)
+predict_nb_loan <- predict(nb_model_loan, newdata=test1, type="class")
+table(predict_nb_loan, test1$NAME_CONTRACT_TYPE)
+loan_bayes_acc <- mean(predict_nb_loan==test1$NAME_CONTRACT_TYPE)
+print(paste("Naive Bayes algorithm for loan data set accuracy = ", loan_bayes_acc))
+
+print(data.frame(predict_nb_loan, test1$NAME_CONTRACT_TYPE))
+```
+The accuracy for Naive Bayes is 49% because Naive Bayes Algorithm does not handle large data set very well.
+
+
+The Algortihms performance and accuracy from best to worst:
+Tree Algorithm > Logistic Regression Algorithm > Naive Bayes Algorithm
+
+The second Data set I pick is also from kaggle: YouTube videos viewCount every hour project
+Here is the link to the data set: https://www.kaggle.com/nnqkfdjq/statistics-observation-of-random-youtube-video#video_characteristics_upload.csv
+In this dataset I would like to pick the view counts as my target for the machine to learn. 
+```{r}
+df2 <- read.csv(file = "/Users/lamphan/Desktop/MachineLearning Project2/count_observation_upload.csv", header=TRUE, sep=",")
+```
+```{r}
+#check out the features for second data set 
+summary(df2)
+names(df2)
+str(df2)
+head(df2)
+tail(df2)
+dim(df2)
+```
+cleaning the data, get the features that are needed for the machine to learn
+```{r}
+df2_fix<- df2[,c("commentCount","dislikeCount", "likeCount", "viewCount", "Time")]
+```
+
+```{r}
+#check out the features for second data set 
+summary(df2_fix)
+names(df2_fix)
+str(df2_fix)
+head(df2_fix)
+tail(df2_fix)
+dim(df2_fix)
+```
+
+check for na values as I learned from the past data set.
+```{r}
+any(is.na(df2_fix$commentCount))
+any(is.na(df2_fix$dislikeCount))
+any(is.na(df2_fix$likeCount))
+any(is.na(df2_fix$viewCount))
+any(is.na(df2_fix$Time))
+```
+fix na values for the feature:
+```{r}
+df2_fix$commentCount[is.na(df2_fix$commentCount)] <- mean(df2_fix$commentCount, na.rm=TRUE)
+df2_fix$dislikeCount[is.na(df2_fix$dislikeCount)] <- mean(df2_fix$dislikeCount, na.rm=TRUE)
+df2_fix$likeCount[is.na(df2_fix$likeCount)] <- mean(df2_fix$likeCount, na.rm=TRUE)
+df2_fix$viewCount[is.na(df2_fix$viewCount)] <- mean(df2_fix$viewCount, na.rm=TRUE)
+```
+check for na values again before I make further process
+```{r}
+any(is.na(df2_fix$commentCount))
+any(is.na(df2_fix$dislikeCount))
+any(is.na(df2_fix$likeCount))
+any(is.na(df2_fix$viewCount))
+any(is.na(df2_fix$Time))
+```
+na values now seem to be out of the 
+I tried to plot but my laptop fail to do so.
+Now apply Linear Regression
+```{r}
+#set test and train sets
+set.seed(2018)
+i <- sample(1:nrow(df2_fix), nrow(df2_fix)*0.75, replace = FALSE)
+train2 <- df2_fix[i,]
+test2 <- df2_fix[-i,]
+```
+generate the linear regression model
+```{r}
+lm1 <- lm(viewCount~. , data = train2)
+```
+```{r}
+pred_lm <- predict(lm1, newdata= test2)
+cor_lm <- cor(pred_lm, test2$viewCount)
+print(paste("correlation for linear regression is : ", cor_lm))
+mse_lm <- mean((pred_lm - train2$viewCount)^2)
+print(paste("mse for linear regression is : ", mse_lm))
+```
+The correlation between the linear regression model and the target is 0.903 which is good.
+though mse is really high
+Now apply Knn on second data set:
+
+```{r}
+#convert Time to numeric so that we can scale the data set
+is.numeric(df2_fix$Time)
+df2_fix$Time <- as.numeric(df2_fix$Time)
+is.numeric(df2_fix$Time)
+
+```
+```{r}
+library(caret)
+df2_scaled <- data.frame(scale(df2_fix[,c(1:5)])) # scale all the features
+```
+Check for na values after scaling
+```{r}
+any(is.na(df2_scaled$commentCount))
+any(is.na(df2_scaled$favoriteCount))
+any(is.na(df2_scaled$likeCount))
+any(is.na(df2_scaled$viewCount))
+any(is.na(df2_scaled$Time))
+```
+devide into train and test set
+then generate the fit model
+```{r}
+train3 <- df2_scaled[i,]
+test3 <- df2_scaled[-i,]
+fit <- knnreg(train3[,2:4],train3[,1], k= 10 , replace = TRUE)
+```
+calculate correlation and the mse
+```{r}
+pred_knn <- predict(fit, test3[,2:4])
+cor_knn <- cor(pred_knn, test3$viewCount)
+print(paste("correlation for knn regression is : ", cor_knn))
+mse_knn <- mean((pred_knn - test3$viewCount)^2)
+print(paste("mse for knn regression is : ", mse_knn))
+```
+The algorith keeps giving the error. It might be because the data set is too large
+Conclusion: Linear Regression is the best for second data set
