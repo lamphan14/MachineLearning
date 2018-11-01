@@ -1,0 +1,171 @@
+---
+title: "Homework 3"
+output: html_notebook
+Name: Lam Phan
+Class: Machine Learning
+Prof: Karen Mazidi
+---
+
+1.	Start with a new Rstudio Rmd file, add headings for Homework 3, your name and a brief description of the purpose of the script. Clearly label each step. Each step should have one or more R code chunks. For step 1, load library mlbench, installing if needed (at the console).  You have to load the data frame into memory with data(BreastCancer) Now run str() and head() on BreastCancer and summary() on just the Class column. Use R instructions to calculate the percent in each class, and print them with an appropriate heading using paste(). Answer the questions in step 1:
+a.	How many instances are there?
+-There are 699 instances
+b.	What is your target column?
+-Class would be my target column.
+c.	How many predictors are there? What type of data are the predictors?
+-10 predictors (excluding the targer $Class)
+-Type: factor
+d.	What percentage of the observations are malignant?
+-It would be 34%
+```{r}
+library(mlbench)
+data(BreastCancer)
+str(BreastCancer)
+head(BreastCancer)
+summary(BreastCancer)
+summary(BreastCancer$Class)
+prop.table(table(BreastCancer$Class))*100
+paste(c("benign","maligant"),prop.table(table(BreastCancer$Class))*100)
+      
+```
+
+2.	Cell.size and Cell.shape are in one of 10 levels. Build a logistic regression model called glm0, where Class is predicted by Cell.size and Cell.shape. Do you get any error or warning messages? 
+-Yes, there is a warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+
+Google the message and try to decide what happened.
+-Google don't have the answer I need. But I think I do know what happened.
+-I think we need to convert those values into binary ( 0 or 1)
+
+Run summary on glm0 to confirm that it did build a model.
+
+-It did build the model for glm0
+
+Write a comment about why you think you got this warning message and what you could possibly do about it. 
+
+-I think the reason why is that this model is asking for binary numbers while we feed it with factor values. I could possibly convert those 2 variance into binary to get rid of the warnings.
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(BreastCancer), 0.75*nrow(BreastCancer), replace=FALSE)
+train <- BreastCancer[i,]
+test <- BreastCancer[-i,]
+glm0 <- glm(Class ~ Cell.size + Cell.shape, data=train, family=binomial)
+summary(glm0)
+```
+
+3.	Notice in the summary() of glm0 that most of the levels of Cell.size and Cell.shape became predictors and that they had very high p-values. We won't be able to build a good logistic regression model this way.  It might be better to just have 2 levels for each variable. In this step, add two new columns to BreastCancer as listed below.  Run summary() on Cell.size and Cell.shape as well as the new columns. Comment on the distribution of the new columns. Do you think what we did is a good idea? Why or why not?
+-My comment on this question is that this is a good idea that we create 2 more columns that contain binary values. Because with 2 levels, we might have a better model with better accuracy.
+
+a.	Cell.small which is a binary factor that is 1 if Cell.size==1 and 0 otherwise
+b.	Cell.regular which is a binary factor that is 1 if Cell.shape==1 and 0 otherwise
+
+```{r}
+BreastCancer$Cell.small <- as.numeric(BreastCancer$Cell.size > 1)
+BreastCancer$Cell.regular <- as.numeric(BreastCancer$Cell.shape>1)
+summary(BreastCancer$Cell.size)
+summary(BreastCancer$Cell.shape)
+summary(BreastCancer$Cell.small)
+summary(BreastCancer$Cell.regular)
+```
+4.	Create conditional density plots using the original Cell.size and Cell.shape. First attach() the data to reduce typing. Then use par(mfrow=c(1,2)) to set up a 1x2 grid for two cdplot() graphs with Class~Cell.size and Class~Cell.shape. Observing the plots, write a sentence or two comparing size and malignant, and shape and malignant. Do you think our cutoff points for size==1 and shape==1 were justified now that you see this graph? Why or why not?
+
+-No,it is not justifield since size and shape won't always be 1
+
+```{r}
+attach(BreastCancer)
+par(mfrow=c(1,2))
+cdplot(Class~Cell.size,pch = c(22,2),col = c("red","blue"))
+cdplot(Class~Cell.shape,pch = c(22,2),col = c("red","blue"))
+
+```
+5.	Create plots (not cdplots) with our new columns. Again, use par(mfrow=c(1,2)) to set up a 1x2 grid for two plot() graphs with Class~Cell.small and Class~Cell.regular. Now create two cdplot() graphs for the new columns. Now compute the following and provide a summary in the text portion of this answer. Also indicate based on these results if you think small and regular will be good predictors.
+a.	calculate the percentage of small observations that are malignant
+
+-45%
+
+b.	calculate the percentage of not-small observations that are malignant
+
+-55%
+
+c.	calculate the percentage of regular observations that are malignant
+
+-49.5%
+
+d.	calculate the percentage of non-regular observations that are malignant
+
+-50.5%
+
+```{r}
+par(mfrow=c(1,2))
+plot(Class~Cell.small)
+plot(Class~Cell.regular)
+prop.table(table(BreastCancer$Cell.small))*100
+prop.table(table(BreastCancer$Cell.regular))*100
+
+```
+6.	Randomly divide BreastCancer into two data sets: train (80% of the data) and test (20%). Make sure you first set the seed to 1234 so you get the same results as others.
+
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(BreastCancer), 0.8*nrow(BreastCancer), replace=FALSE)
+train <- BreastCancer[i,]
+test <- BreastCancer[-i,]
+```
+
+7.	Build a logistic regression classifier to estimate the probability of Class given Cell.small and Cell.regular. Run summary() on your model. Answer the following:
+a.	Which predictor(s) seem to be good predictors. Justify your answer.
+
+- Cell.small and Cell.regular as the predictors seem to be good predictors since they are binary. We have lower p-value for this model so it is good.
+ 
+b.	Comment on the Null deviance versus the Residual deviance.
+
+-The null deviance measure the lack of fit of the model and in this model it is 663
+
+-The Residual deviance measure the lac of fit of the entire model and in this model it is 241.47
+
+c.	Comment on the AIC score. 
+
+-the new model has bigger AIC score than the original model. which is worse since the smaller AIC score is the better.
+
+```{r}
+glm1 <- glm(Class ~ Cell.small + Cell.regular, data=train, family=binomial)
+summary(glm1)
+```
+8.	Test the model on the test data and compute accuracy. What percent accuracy did you get?
+
+-89.7% is the percent accuracy that I got.
+```{r}
+probs <- predict(glm1, newdata=test, type="response")
+pred <- ifelse(probs>0.5, 2, 1)
+acc1 <- mean(pred==as.integer(test$Class))
+print(paste("glm1 accuracy = ", acc1))
+```
+9.	Your coefficients from the model are in units of logits.  Extract the coefficient of small with glm1$coefficients[]. Answer the following questions:
+a.	What is the coefficient?
+-4.034923
+b.	How do you interpret this value?
+-I would say that for 4.034923 of change in the log odds of y for a one unit change in -6.4324
+c.	Find the estimated probability of malignancy if Cell.small is true using exp().
+-98.26%
+d.	Find the probability of malignancy if Cell.small is true over the whole BreastCancer data set and compare results. Are they close? Why or why not?
+-they are not close because one is applied on one column and the other is applied on the entire data set.
+```{r}
+glm1$coefficients["Cell.small"]
+#c
+exp(4.034923)/(1+exp(4.034923))
+#d
+print(paste("probability of malignancy if Cell.small is true over the whole BreastCancer data set: ",(34/98)*100,"%"))
+```
+10.	Build two more models, each just using Cell.small and Cell.regular and use anova(glm_small, glm_regular, glm1) to compare all 3 models, using whatever names you used for your models. Analyze the results of the anova(). Also, compare the 3 AIC scores of the models. Feel free to use the internet to help you interpret AIC scores.
+
+```{r}
+glm_small <- glm(Class ~ Cell.small, data=train, family=binomial)
+glm_regular <- glm(Class ~ Cell.small, data=train, family=binomial)
+summary(glm_small)
+```
+```{r}
+summary(glm_regular)
+```
+```{r}
+anova(glm1,glm_small,glm_regular)
+```
+
+-Looking at the statistic from anova() function, we can say that the model glm1 outperfrom the other 2 models since it has lower residual deviance and also it has the lowest AIC score.

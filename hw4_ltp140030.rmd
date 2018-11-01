@@ -1,0 +1,150 @@
+---
+title: "Hw4"
+output: html_notebook
+name: LamPhan
+class: Machine Learning
+Prof: Dr. Karen Mazidi
+---
+
+1.	Set up the Auto data:
+a.	Load the ISLR package and the Auto data
+b.	Determine the median value for mpg
+22.75
+c.	Use the median to create a new column in the data set named mpglevel, which is 1 if mpg>median and otherwise is 0. Make sure this variable is a factor. We will use mpglevel as the target (response) variable for the algorithms. 
+d.	Use the names() function to verify that your new column is in Auto
+e.	create a 75-25 train/test split, using seed 1234 but do not include columns 'name' or 'mpg' in either train or test
+```{r}
+library(ISLR)
+data(Auto)
+median(Auto$mpg)
+Auto$mpglevel <- as.numeric(Auto$mpg > median(Auto$mpg))
+is.factor(Auto$mpglevel)
+Auto$mpglevel <- as.factor(Auto$mpglevel)
+is.factor(Auto$mpglevel)
+names(Auto)
+set.seed(1234)
+i <- sample(1:nrow(Auto), nrow(Auto)*0.75, replace=FALSE)
+train <- Auto[i,]
+test <- Auto[-i,]
+```
+2.	Plots 
+a.	 Set up a 2x2 graph grid and plot the following pairs of plots 
+b.	Plot pair 1: plot horsepower~mpg and weight~mpg, setting colors according to the factor mpglevel, ex: col=(Auto$mpglevel)
+c.	Plot pair 2:  plot horsepower~mpglevel and weight~mpglevel 
+```{r}
+par(mfrow=c(2,2))
+plot(horsepower~mpg, pch = c(22,2),col = c("red","blue"), main = "Auto", xlab = "MPG", ylab = "Horsepower")
+plot(weight~mpg, pch = c(22,2),col = c("red","blue"), main = "Auto", xlab = "MPG", ylab = "Weight" )
+plot(horsepower~Auto$mpglevel, pch = c(22,2),col = c("red","blue"), main = "Auto", xlab = "MPG-level", ylab = "Horsepower")
+plot(weight~Auto$mpglevel, pch = c(22,2),col = c("red","blue"), main = "Auto", xlab = "MPG-level", ylab = "Weight")
+```
+3.	Build a Naïve Bayes model 
+a.	build the model on the train set
+b.	use the predict() function on the test set
+c.	create a table comparing predicted to actual values for mpglevel
+d.	calculate the mean accuracy
+```{r}
+library(e1071)
+nb_model <- naiveBayes(mpglevel~., data = train)
+predict_nb <- predict(nb_model, newdata=test, type="class")
+table(predict_nb, test$mpglevel)
+mean(predict_nb==test$mpglevel)
+print(data.frame(predict_nb, test$mpglevel))
+```
+4.	SVM linear kernel 
+a.	use the tune() function to perform cross-validation to determine the best value for cost
+-best cost value = 1
+b.	use the parameter(s) from the previous step to build an svm model with a linear kernel on the train set
+
+c.	use the predict() function on the test set
+d.	create a table comparing predicted to actual values for mpglevel
+e.	calculate the mean accuracy
+```{r}
+tune_svm1 <- tune(svm, mpglevel~., data=train, kernel="linear", 
+                ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
+summary(tune_svm1)
+```
+```{r}
+best_mod1 <- tune_svm1$best.model
+summary(best_mod1)
+```
+```{r}
+svm1 <- svm(mpglevel~., data=train, kernel="linear", cost=1, scale=TRUE)
+pred_svm1 <- predict(svm1, newdata=test)
+```
+```{r}
+table(pred_svm1, test$mpglevel)
+#mean accuracy
+mean(pred_svm1==test$mpglevel)
+```
+```{r}
+#predict values vs actual values table
+print(data.frame(pred_svm1, test$mpglevel))
+```
+5.	SVM polynomial kernel 
+a.	use the tune() function to perform cross-validation to determine the best values for cost and degree
+-cost = 1 and degree = 3
+b.	use the parameter(s) from the previous step to build an svm model with a polynomial kernel on the train set
+c.	use the predict() function on the test set
+d.	create a table comparing predicted to actual values for mpglevel
+e.	calculate the mean accuracy
+```{r}
+tune_svm2 = best.tune(svm, mpglevel ~., data = train, kernel =
+"polynomial")
+summary(tune_svm2)
+```
+```{r}
+svm_model2 <- svm(mpglevel ~., data = train, kernel  =
+"polynomial", cost = 1, degree = 3)
+svm_pred2 <- predict(svm_model2, newdata=test)
+```
+```{r}
+table(svm_pred2, test$mpglevel)
+#mean accuracy
+mean(svm_pred2==test$mpglevel)
+```
+```{r}
+print(data.frame(svm_pred2, test$mpglevel))
+
+```
+
+6.	SVM radial kernel 
+a.	use the tune() function to perform cross-validation to determine the best values for cost and gamma
+cost = 10 and gamma = 0.01
+b.	use the parameter(s) from the previous step to build an svm model with a radial kernel on the train set
+c.	use the predict() function on the test set
+d.	create a table comparing predicted to actual values for mpglevel
+e.	calculate the mean accuracy
+```{r}
+set.seed(1234)
+tune_svm3 = tune(svm, mpglevel~., data=train, kernel="radial",
+            ranges=list(cost=c(0.01,0.1,1,10),
+                gamma=c(0.01,0.1,0.5,1,2,3,4)))
+summary(tune_svm3)
+```
+```{r}
+best_mod3 <- tune_svm3$best.model
+summary(best_mod3)
+```
+```{r}
+svm_fit3 <- svm(mpglevel~., data=train, kernel="radial",
+      cost=10, gamma=0.01, scale=FALSE)
+svm_pred3 <- predict(svm_fit3, newdata=test)
+```
+```{r}
+table(svm_pred3, test$mpglevel)
+#mean accuracy
+mean(svm_pred3==test$mpglevel)
+```
+```{r}
+print(data.frame(svm_pred3, test$mpglevel))
+
+```
+7.	Questions. 
+a.	Compare the accuracy results for the 4 models
+Linear kernal > Naive Bayes > Radial Kernel > Polinomial Kernel 
+b.	Discuss the advantages and disadvantages of Naïve Bayes versus svm
+Advantages of Naive Bayes versus svm when there are few training cases  and short documents.
+SVM is better when it has a lot of training cases
+
+
