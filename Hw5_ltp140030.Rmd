@@ -1,0 +1,224 @@
+---
+title: "R Notebook"
+class: Machine Learning
+names: Lam Phan
+output:
+  html_document:
+    df_print: paged
+Prof: Dr. Karen Mazidi
+---
+
+1. Set up the data. (5 points)
+a. Load the ISLR library and attach the Default data set.
+b. Run the dim() and names() functions on Default
+c. Use function set.seed(2017) so your results are reproducible.
+d. Divide the data into 80% for training and the rest for a test set.
+```{r}
+library(ISLR)
+attach(Default)
+dim(Default)
+names(Default)
+str(Default)
+set.seed(2017)
+i <- sample(1:nrow(Default), nrow(Default)*0.80, replace=FALSE)
+train <- Default[i,]
+test <- Default[-i,]
+```
+2. Logistic regression model (5 points)
+a. create a logistic regression model on the training data where default is predicted by all other variables
+b. run a summary of the model
+c. predict Yes/No on the test data
+d. compute the accuracy
+```{r}
+glm1 <- glm(default~., data=train, family=binomial)
+summary(glm1)
+probs <- predict(glm1, newdata=test, type="response")
+pred <- ifelse(probs>0.5, 2, 1)
+acc1 <- mean(pred==as.integer(test$default))
+print(paste("glm1 accuracy = ", acc1))
+table(pred, as.integer(test$default))
+```
+3. Decision tree model (10 points)
+a. create a decision tree model on the training data
+b. run a summary of the model
+c. make predictions for the test set
+d. compute the accuracy
+e. print the tree with labels
+f. display the tree in nested decision form by just using the tree name
+```{r}
+library(tree)
+tree_default <- tree(default~., data=train)
+summary(tree_default)
+tree_pred1 <- predict(tree_default, newdata=test, type="class")
+table(tree_pred1, test$default)
+acc2 <- mean(tree_pred1==test$default)
+print(paste("default tree accuracy = ", acc2))
+```
+```{r}
+tree_default
+```
+```{r}
+plot(tree_default)
+text(tree_default, cex=.5, pretty=0)
+```
+4. Try Random Forest or Boosting (5 points) and compare your results.
+```{r}
+library(randomForest)
+set.seed(2017)
+tree_forest_default <- randomForest(default~., data=train)
+tree_forest_default
+pred_forest <- predict(tree_forest_default, newdata=test)
+acc3 <- mean(pred_forest==test$default)
+print(paste("default random forest accuracy = ", acc3))
+```
+decision tree has the same accuracy as the randon forest and logistic regression.
+
+Problem 2: Heart data (45 points)
+Instructions:
+1. Set up the data. (5 points)
+a. Download the heart data to your machine from Piazza.
+b. Load the data into R and attach it
+c. Remove the “X” column
+d. Set up train and test sets with 80% for training again using seed 2017
+```{r}
+Heart <- read.csv(file = "/Users/lamphan/Desktop/heart.csv", header=TRUE, sep=",")
+str(Heart)
+Heart$X <- NULL
+attach(Heart)
+str(Heart)
+```
+
+```{r}
+set.seed(2017)
+i <- sample(1:nrow(Heart), nrow(Heart)*0.80, replace=FALSE)
+train_h <- Heart[i,]
+test_h <- Heart[-i,]
+```
+2. Logistic regression model (5 points)
+a. create a logistic regression model on the training data where AHD is predicted by all other variables
+b. run a summary of the model
+c. predict Yes/No on the test data
+d. compute the accuracy
+
+
+```{r}
+glm_h <- glm(AHD~., data=train_h, family=binomial)
+summary(glm_h)
+probs_h <- predict(glm_h, newdata=test_h, type="response")
+pred_h <- ifelse(probs_h> 0.5, 2, 1)
+pred_h[is.na(pred_h)] <- 2
+
+acc_h1 <- mean(pred_h==as.integer(test_h$AHD))
+head(test_h$AHD)
+head(pred_h)
+print(paste("glm heart accuracy = ", acc_h1))
+table(pred_h, as.integer(test_h$AHD))
+```
+
+3. Decision Tree Model (5 points)
+a. create a decision tree model on the training data
+b. run a summary of the model
+c. make predictions for the test set
+d. compute the accuracy
+```{r}
+library(tree)
+tree_h <- tree(AHD~., data=train_h)
+summary(tree_h)
+tree_pred_h <- predict(tree_h, newdata=test_h, type="class")
+table(tree_pred_h, test_h$AHD)
+acc_h2 <- mean(tree_pred_h==test_h$AHD)
+print(paste("heart tree accuracy = ", acc_h2))
+```
+
+4. Display the tree (5 points)
+a. print the tree with labels
+b. display the tree in nested decision form by just using the tree name
+```{r}
+tree_h
+```
+```{r}
+plot(tree_h)
+text(tree_h, cex=0.5, pretty=0)
+```
+5. Cross validation (10 points)
+a. create a new tree from the cv.tree() function
+b. look at the $dev and $size variables by displaying the tree using its name
+c. plot in a 1x2 format:
+i. $size and $dev
+ii. $k and $dev
+```{r}
+cv_tree <- cv.tree(tree_h)
+summary(cv_tree)
+plot(cv_tree$size, cv_tree$dev, type = 'b')
+plot(cv_tree$k, cv_tree$dev, type = 'b')
+
+```
+6. Prune the tree (10 points)
+a. create a new pruned tree using best=n where n is the optimal size indicated in step 5
+b. plot the new pruned tree with labels
+c. Using the pruned tree, make predictions on the test set
+d. Compute the accuracy
+```{r}
+tree_pruned_h <- prune.tree(tree_h, best= 4)
+plot(tree_pruned)
+text(tree_pruned, pretty=0)
+```
+```{r}
+pred_pruned <- predict(tree_pruned_h, newdata=test_h)
+acc_pruned_tree <- mean(tree_pred_h==test_h$AHD)
+print(paste("accuracy of the pruned tree is: ", acc_pruned_tree))
+```
+7. Try Random Forest or Boosting (5 points) and compare your results
+
+```{r}
+set.seed(2017)
+str(Heart)
+tree_forest_heart <- randomForest(AHD~., data = train_h, na.action= na.roughfix)
+tree_forest_heart
+pred_forest_heart <- predict(tree_forest_heart, newdata=test_h)
+is.na(pred_forest_heart)
+which (is.na(pred_forest_heart))
+pred_forest_heart <- na.omit(is.na(pred_forest_heart))
+is.na(pred_forest_heart)
+which (is.na(pred_forest_heart))
+acc_random_forest_heart <- mean(pred_forest_heart== as.numeric(test_h$AHD),na.rm = T)
+print(paste("Heart random forest accuracy = ", acc_random_forest_heart))
+cor(pred_forest_heart, as.numeric(test_h$AHD))
+
+```
+Answer the questions at the bottom of your Rmd file. Upload the Rmd file to TurnItIn.
+Questions: (30 points)
+Problem 1
+1. In the logistic regression model, which variables were important and which were not?
+-variables that were important: quantitative variables
+-variables that were not: qualitative variables
+2. What was the accuracy of the logistic regression  model and the decision tree model?
+
+-The accuracy of the two models are the same.
+
+3. In the tree, why might you have a branch where both branches are No?
+-the tree still seperates the balance even though the both branches have No.
+4. Write a simple if/else statement that summarizes the Yes/No values in the decision tree.
+if data in dataframe belong to the same class y(t) -> t is a leaf of
+node labeled as y(t)
+else dataframe contains datas that belong to more than one class -> an attribute test condition is selected to partition the datas into smaller subsets.
+5. Is it a good idea to prune this tree? Why or why not?
+
+-Prune tree would not guarantee of improving performance, but it is a good practice to prune a tree in order to get better result.
+-It is always a good practice to prune a tree including the tree in this assignment, becuause the purpose of pruning a tree is to reduce overfitting. If it doesn't work we can always leave it out, but it would cost us some of our time to do this method.
+
+Problem 2
+1. Which variables were important (2 or 3 **) in the logistic regression model?
+-it would be 3 **
+2. Which variables were used to create the decision tree?
+-It would be quantitative data.
+
+3. Compare the accuracy of the logistic regression model and the decision tree.
+-Logistic Regression model accuracy is a little better than the decision tree.
+
+4. What was the accuracy on the pruned tree?
+-The accuracy on the pruned tree is the same as dicision tree.
+
+5. Which model (logistic regression, decision tree) might be more meaningful to a doctor, and why.
+-It depends what the doctor is looking for.
+-I would say decision tree might be more meaningful to a doctor because it provides more information about the data by showing a graphical view.
